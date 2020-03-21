@@ -1,0 +1,12 @@
+config:
+  acmefitness:kubevars: 
+    isSingleNode: true
+    dataStorePassword: helloworld
+    frontendPort: 3000
+    usersPort: 8083
+    catalogPort: 8082
+    orderPort: 6000
+    cartPort: 5000
+    paymentPort: 9000
+    frontendNodeport: 30430
+    posNodeport: 30431
