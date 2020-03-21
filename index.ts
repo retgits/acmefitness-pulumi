@@ -60,6 +60,17 @@ interface Data {
 }
 
 /**
+ * Service contains the configuration variables needed for each individual service
+ */
+interface K8sService {
+    name: string;
+    service: string;
+    portnumber: number;
+    portname: string;
+    dependency: pulumi.Resource;
+}
+
+/**
  * Initialize the configuration from the Pulumi Configuration file
  */
 const config = new pulumi.Config();
@@ -222,31 +233,6 @@ const cartRedisDeployment = new k8s.apps.v1.Deployment("cart-redis-deployment", 
 });
 
 /**
- * Create a service for the redis backend of the cart
- */
-const cartRedisService = new k8s.core.v1.Service("cart-redis-service", {
-    metadata: {
-        name: "cart-redis",
-        labels: {
-            app: "acmefit",
-            service: "cart-redis",
-        },
-    },
-    spec: {
-        ports: [{
-            port: 6379,
-            name: "redis-cart"
-        }],
-        selector: {
-            app: "acmefit",
-            service: "cart-redis",
-        },
-    },
-}, {
-    dependsOn: [cartRedisDeployment]
-});
-
-/**
  * Create a deployment for the cart service
  */
 const cartDeployment = new k8s.apps.v1.Deployment("cart-deployment", {
@@ -341,32 +327,6 @@ const cartDeployment = new k8s.apps.v1.Deployment("cart-deployment", {
 });
 
 /**
- * Create a service for the cart service
- */
-const cartService = new k8s.core.v1.Service("cart-service", {
-    metadata: {
-        name: "cart",
-        labels: {
-            app: "acmefit",
-            service: "cart",
-        },
-    },
-    spec: {
-        ports: [{
-            port: kubeVars.cartPort,
-            name: "http-cart",
-            protocol: "TCP"
-        }],
-        selector: {
-            app: "acmefit",
-            service: "cart",
-        },
-    },
-}, {
-    dependsOn: [cartDeployment]
-});
-
-/**
  * Create a deployment for the mongo backend of the catalog
  */
 const catalogMongoDeployment = new k8s.apps.v1.Deployment("catalogmongo-deployment", {
@@ -440,32 +400,6 @@ const catalogMongoDeployment = new k8s.apps.v1.Deployment("catalogmongo-deployme
     },
 }, {
     dependsOn: [catalogConfigMap]
-});
-
-/**
- * Create a service for the mongo backend of the catalog
- */
-const catalogMongoService = new k8s.core.v1.Service("catalog-mongo-service", {
-    metadata: {
-        name: "catalog-mongo",
-        labels: {
-            app: "acmefit",
-            service: "catalog-db",
-        },
-    },
-    spec: {
-        ports: [{
-            port: 27017,
-            name: "mongo-catalog",
-            protocol: "TCP",
-        }],
-        selector: {
-            app: "acmefit",
-            service: "catalog-db",
-        },
-    },
-}, {
-    dependsOn: [catalogMongoDeployment]
 });
 
 /**
@@ -566,32 +500,6 @@ const catalogDeployment = new k8s.apps.v1.Deployment("catalog-deployment", {
 });
 
 /**
- * Create a service for the catalog service
- */
-const catalogService = new k8s.core.v1.Service("catalog-service", {
-    metadata: {
-        name: "catalog",
-        labels: {
-            app: "acmefit",
-            service: "catalog",
-        },
-    },
-    spec: {
-        ports: [{
-            port: kubeVars.catalogPort,
-            name: "http-catalog",
-            protocol: "TCP"
-        }],
-        selector: {
-            app: "acmefit",
-            service: "catalog",
-        },
-    },
-}, {
-    dependsOn: [catalogDeployment]
-});
-
-/**
  * Create a deployment for the payment service
  */
 const paymentDeployment = new k8s.apps.v1.Deployment("payment-deployment", {
@@ -649,32 +557,6 @@ const paymentDeployment = new k8s.apps.v1.Deployment("payment-deployment", {
             },
         },
     },
-});
-
-/**
- * Create a service for the payment service
- */
-const paymentService = new k8s.core.v1.Service("payment-service", {
-    metadata: {
-        name: "payment",
-        labels: {
-            app: "acmefit",
-            service: "payment",
-        },
-    },
-    spec: {
-        ports: [{
-            port: kubeVars.paymentPort,
-            name: "http-payment",
-            protocol: "TCP"
-        }],
-        selector: {
-            app: "acmefit",
-            service: "payment",
-        },
-    },
-}, {
-    dependsOn: [paymentDeployment]
 });
 
 /**
@@ -750,31 +632,6 @@ const orderPostgresDeployment = new k8s.apps.v1.Deployment("order-postgres-deplo
             },
         },
     },
-});
-
-/**
- * Create a service for the postgres backend of the order service
- */
-const orderPostgresService = new k8s.core.v1.Service("order-postgres-service", {
-    metadata: {
-        name: "order-postgres",
-        labels: {
-            app: "acmefit",
-            service: "order-postgres",
-        },
-    },
-    spec: {
-        ports: [{
-            port: 5432,
-            name: "postgres-order"
-        }],
-        selector: {
-            app: "acmefit",
-            service: "order-db",
-        },
-    },
-}, {
-    dependsOn: [orderPostgresDeployment]
 });
 
 /**
@@ -889,34 +746,6 @@ const orderDeployment = new k8s.apps.v1.Deployment("order-deployment", {
             },
         },
     },
-}, {
-    dependsOn: [paymentService]
-});
-
-/**
- * Create a service for the order service
- */
-const orderService = new k8s.core.v1.Service("order-service", {
-    metadata: {
-        name: "order",
-        labels: {
-            app: "acmefit",
-            service: "order",
-        },
-    },
-    spec: {
-        ports: [{
-            port: kubeVars.orderPort,
-            name: "http-order",
-            protocol: "TCP"
-        }],
-        selector: {
-            app: "acmefit",
-            service: "order",
-        },
-    },
-}, {
-    dependsOn: [orderDeployment]
 });
 
 /**
@@ -996,32 +825,6 @@ const usersMongoDeployment = new k8s.apps.v1.Deployment("usersmongo-deployment",
 });
 
 /**
- * Create a service for the mongo backend of the users
- */
-const usersMongoService = new k8s.core.v1.Service("users-mongo-service", {
-    metadata: {
-        name: "users-mongo",
-        labels: {
-            app: "acmefit",
-            service: "users-mongo",
-        },
-    },
-    spec: {
-        ports: [{
-            port: 27017,
-            name: "mongo-users",
-            protocol: "TCP",
-        }],
-        selector: {
-            app: "acmefit",
-            service: "users-mongo",
-        },
-    },
-}, {
-    dependsOn: [usersMongoDeployment]
-});
-
-/**
  * Create a deployment for the redis backend of the users
  */
 const usersRedisDeployment = new k8s.apps.v1.Deployment("users-redis-deployment", {
@@ -1089,31 +892,6 @@ const usersRedisDeployment = new k8s.apps.v1.Deployment("users-redis-deployment"
             },
         },
     },
-});
-
-/**
- * Create a service for the redis backend of the users
- */
-const usersRedisService = new k8s.core.v1.Service("users-redis-service", {
-    metadata: {
-        name: "users-redis",
-        labels: {
-            app: "acmefit",
-            service: "users-redis",
-        },
-    },
-    spec: {
-        ports: [{
-            port: 6379,
-            name: "redis-users"
-        }],
-        selector: {
-            app: "acmefit",
-            service: "users-redis",
-        },
-    },
-}, {
-    dependsOn: [usersRedisDeployment]
 });
 
 /**
@@ -1216,30 +994,45 @@ const usersDeployment = new k8s.apps.v1.Deployment("users-deployment", {
 });
 
 /**
- * Create a service for the users service
+ * Create all services for the deployments
  */
-const usersService = new k8s.core.v1.Service("users-service", {
-    metadata: {
-        name: "users",
-        labels: {
-            app: "acmefit",
-            service: "users",
+const services: K8sService[] = [
+    { name: "cart-redis", service: "cart-redis", portname: "redis-cart", portnumber: 6379, dependency: cartRedisDeployment, },
+    { name: "cart", service: "cart", portname: "http-cart", portnumber: kubeVars.cartPort, dependency: cartDeployment, },
+    { name: "catalog-mongo", service: "catalog-db", portname: "mongo-catalog", portnumber: 27017, dependency: catalogMongoDeployment, },
+    { name: "catalog", service: "catalog", portname: "http-catalog", portnumber: kubeVars.catalogPort, dependency: catalogDeployment, },
+    { name: "payment", service: "payment", portname: "http-payment", portnumber: kubeVars.paymentPort, dependency: paymentDeployment, },
+    { name: "order-postgres", service: "order-db", portname: "postgres-order", portnumber: 5432, dependency: orderPostgresDeployment, },
+    { name: "order", service: "order", portname: "http-order", portnumber: kubeVars.orderPort, dependency: orderDeployment, },
+    { name: "users-mongo", service: "users-mongo", portname: "mongo-users", portnumber: 27017, dependency: usersMongoDeployment, },
+    { name: "users-redis", service: "users-redis", portname: "redis-users", portnumber: 6379, dependency: usersRedisDeployment, },
+    { name: "users", service: "users", portname: "http-users", portnumber: kubeVars.usersPort, dependency: usersDeployment, },
+]
+
+for (let service of services) {
+    let svc = new k8s.core.v1.Service(service.name + "-service", {
+        metadata: {
+            name: service.name,
+            labels: {
+                app: "acmefit",
+                service: service.service,
+            },
         },
-    },
-    spec: {
-        ports: [{
-            port: kubeVars.usersPort,
-            name: "http-users",
-            protocol: "TCP"
-        }],
-        selector: {
-            app: "acmefit",
-            service: "users",
+        spec: {
+            ports: [{
+                port: service.portnumber,
+                name: service.portname,
+                protocol: "TCP"
+            }],
+            selector: {
+                app: "acmefit",
+                service: service.service,
+            },
         },
-    },
-}, {
-    dependsOn: [usersDeployment]
-});
+    }, {
+        dependsOn: [service.dependency]
+    });
+}
 
 /**
  * Create a deployment for the frontend service
