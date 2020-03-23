@@ -1,5 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
+import * as cs from "./secrets";
 
 /**
  * Data contains the configuration variables needed to initiate the Pulumi stack
@@ -98,30 +99,10 @@ const frontendNodeportConfig = {
 }
 
 /**
- * toBase64 returns a base64 encoded string which can be used in a Kubernetes secret
- * @param s the string to encode
- */
-function toBase64(s: string): string {
-    return Buffer.from(s).toString("base64");
-}
-
-/**
  * Before deploying the different services, default passwords will be created for the service to use in authenticating with the cache. 
  */
 const passwords: string[] = ["cart-redis-pass", "catalog-mongo-pass", "order-postgres-pass", "users-redis-pass", "users-mongo-pass"]
-
-for (let password of passwords) {
-    let passwd = new k8s.core.v1.Secret(password, {
-        metadata: {
-            name: password,
-            namespace: "default"
-        },
-        type: "Opaque",
-        data: {
-            password: toBase64(kubeVars.dataStorePassword),
-        }
-    })
-}
+new cs.ACMESecrets(passwords, kubeVars.dataStorePassword);
 
 /**
  * Create a config map that contains the initial catalog items
